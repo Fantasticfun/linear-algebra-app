@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom"
-import { chapters } from "../data/chapters"
+import { chapters, type Chapter } from "../data/chapters"
 
 export default function ChapterPage() {
   const { id } = useParams<{ id: string }>()
@@ -61,11 +61,11 @@ export default function ChapterPage() {
 }
 
 function NavButton({ chapters, currentId, direction }: {
-  chapters: typeof chapters
+  chapters: Chapter[]
   currentId: string
   direction: "prev" | "next"
 }) {
-  const idx = chapters.findIndex(c => c.id === currentId)
+  const idx = chapters.findIndex((c: Chapter) => c.id === currentId)
   const targetIdx = direction === "prev" ? idx - 1 : idx + 1
   if (targetIdx < 0 || targetIdx >= chapters.length) return <div />
 
