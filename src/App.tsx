@@ -7,6 +7,7 @@ import ReferencePage from "./pages/ReferencePage"
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [activeModule, setActiveModule] = useState("home")
 
   return (
@@ -17,6 +18,8 @@ export default function App() {
           setOpen={setSidebarOpen}
           activeModule={activeModule}
           setActiveModule={setActiveModule}
+          collapsed={sidebarCollapsed}
+          setCollapsed={setSidebarCollapsed}
         />
         <main className="flex-1 overflow-auto bg-gray-50">
           <MobileHeader onMenuClick={() => setSidebarOpen(true)} activeModule={activeModule} />
@@ -34,9 +37,10 @@ export default function App() {
   )
 }
 
-function Sidebar({ open, setOpen, activeModule, setActiveModule }: {
+function Sidebar({ open, setOpen, activeModule, setActiveModule, collapsed, setCollapsed }: {
   open: boolean; setOpen: (v: boolean) => void;
   activeModule: string; setActiveModule: (v: string) => void;
+  collapsed: boolean; setCollapsed: (v: boolean) => void;
 }) {
   const menuItems = [
     { id: "home", label: "首页", icon: "🏠", path: "/" },
@@ -49,17 +53,23 @@ function Sidebar({ open, setOpen, activeModule, setActiveModule }: {
     <>
       {open && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setOpen(false)} />}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-gray-900 text-gray-100
-        transform transition-transform duration-300 ease-in-out
+        fixed lg:static inset-y-0 left-0 z-50 bg-gray-900 text-gray-100
+        transform transition-all duration-300 ease-in-out
         ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+        ${collapsed ? "w-16" : "w-64"}
         flex flex-col
       `}>
-        <div className="flex items-center gap-2 px-4 h-16 border-b border-gray-700">
-          <span className="text-2xl">📐</span>
-          <div>
-            <h1 className="text-lg font-bold">线性代数学习中心</h1>
-            <p className="text-xs text-gray-400">Interactive Learning</p>
-          </div>
+        <div className={`
+          flex items-center gap-2 px-4 h-16 border-b border-gray-700
+          ${collapsed ? "justify-center px-0" : ""}
+        `}>
+          <span className="text-2xl flex-shrink-0">📐</span>
+          {!collapsed && (
+            <div className="overflow-hidden whitespace-nowrap">
+              <h1 className="text-lg font-bold">线性代数学习中心</h1>
+              <p className="text-xs text-gray-400">Interactive Learning</p>
+            </div>
+          )}
         </div>
         <nav className="flex-1 py-4">
           {menuItems.map(item => (
@@ -78,22 +88,41 @@ function Sidebar({ open, setOpen, activeModule, setActiveModule }: {
                   window.dispatchEvent(new PopStateEvent("popstate"))
                 }
               }}
+              title={collapsed ? item.label : undefined}
               className={`
                 flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-colors
+                ${collapsed ? "justify-center px-0 mx-1" : ""}
                 ${activeModule === item.id
                   ? "bg-blue-600 text-white"
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
                 }
               `}
             >
-              <span className="text-lg">{item.icon}</span>
-              <span className="font-medium">{item.label}</span>
+              <span className="text-lg flex-shrink-0">{item.icon}</span>
+              {!collapsed && <span className="font-medium whitespace-nowrap">{item.label}</span>}
             </a>
           ))}
         </nav>
-        <div className="p-4 border-t border-gray-700 text-xs text-gray-500">
-          中国矿业大学 · 线性代数
+        <div className={`
+          border-t border-gray-700 text-xs text-gray-500
+          ${collapsed ? "text-center p-2" : "p-4"}
+        `}>
+          {collapsed ? "矿大" : "中国矿业大学 · 线性代数"}
         </div>
+        {/* 折叠按钮 */}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="absolute -right-3 top-20 w-6 h-6 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center text-gray-300 transition-colors"
+          title={collapsed ? "展开侧边栏" : "收起侧边栏"}
+        >
+          <svg
+            width="12" height="12" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+            className={`transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`}
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
       </aside>
     </>
   )
