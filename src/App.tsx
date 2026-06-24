@@ -1,47 +1,65 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import { useState } from "react"
+import { HashRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom"
+import { useState, useEffect } from "react"
 import HomePage from "./pages/HomePage"
 import ChapterPage from "./pages/ChapterPage"
 import CalculatorPage from "./pages/CalculatorPage"
 import ReferencePage from "./pages/ReferencePage"
 
-export default function App() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [activeModule, setActiveModule] = useState("home")
+function getModuleFromPath(path: string) {
+  if (path.startsWith("/calculator")) return "calculator"
+  if (path.startsWith("/reference")) return "reference"
+  if (path.startsWith("/chapters")) return "chapters"
+  return "home"
+}
 
+export default function App() {
   return (
-    <BrowserRouter basename="/linear-algebra-app">
-      <div className="flex h-screen overflow-hidden">
-        <Sidebar
-          open={sidebarOpen}
-          setOpen={setSidebarOpen}
-          activeModule={activeModule}
-          setActiveModule={setActiveModule}
-          collapsed={sidebarCollapsed}
-          setCollapsed={setSidebarCollapsed}
-        />
-        <main className="flex-1 overflow-auto bg-gray-50">
-          <MobileHeader onMenuClick={() => setSidebarOpen(true)} activeModule={activeModule} />
-          <div className="p-4 md:p-8 max-w-7xl mx-auto">
-            <Routes>
-              <Route path="/" element={<HomePage onNavigate={setActiveModule} />} />
-              <Route path="/chapters/:id" element={<ChapterPage />} />
-              <Route path="/calculator" element={<CalculatorPage />} />
-              <Route path="/reference" element={<ReferencePage />} />
-            </Routes>
-          </div>
-        </main>
-      </div>
-    </BrowserRouter>
+    <HashRouter>
+      <AppInner />
+    </HashRouter>
   )
 }
 
-function Sidebar({ open, setOpen, activeModule, setActiveModule, collapsed, setCollapsed }: {
+function AppInner() {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const location = useLocation()
+  const [activeModule, setActiveModule] = useState("home")
+
+  useEffect(() => {
+    setActiveModule(getModuleFromPath(location.pathname))
+  }, [location.pathname])
+
+  return (
+    <div className="flex h-screen overflow-hidden">
+      <Sidebar
+        open={sidebarOpen}
+        setOpen={setSidebarOpen}
+        activeModule={activeModule}
+        collapsed={sidebarCollapsed}
+        setCollapsed={setSidebarCollapsed}
+      />
+      <main className="flex-1 overflow-auto bg-gray-50">
+        <MobileHeader onMenuClick={() => setSidebarOpen(true)} activeModule={activeModule} />
+        <div className="p-4 md:p-8 max-w-7xl mx-auto">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/chapters/:id" element={<ChapterPage />} />
+            <Route path="/calculator" element={<CalculatorPage />} />
+            <Route path="/reference" element={<ReferencePage />} />
+          </Routes>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+function Sidebar({ open, setOpen, activeModule, collapsed, setCollapsed }: {
   open: boolean; setOpen: (v: boolean) => void;
-  activeModule: string; setActiveModule: (v: string) => void;
+  activeModule: string;
   collapsed: boolean; setCollapsed: (v: boolean) => void;
 }) {
+  const navigate = useNavigate()
   const menuItems = [
     { id: "home", label: "首页", icon: "🏠", path: "/" },
     { id: "chapters", label: "知识章节", icon: "📚", path: "/" },
@@ -73,25 +91,16 @@ function Sidebar({ open, setOpen, activeModule, setActiveModule, collapsed, setC
         </div>
         <nav className="flex-1 py-4">
           {menuItems.map(item => (
-            <a
+            <button
               key={item.id}
-              href={item.path}
-              onClick={(e) => {
-                e.preventDefault()
-                setActiveModule(item.id)
+              onClick={() => {
+                navigate(item.path)
                 setOpen(false)
-                if (item.id === "home" || item.id === "chapters") {
-                  window.history.pushState({}, "", "/linear-algebra-app/")
-                  window.dispatchEvent(new PopStateEvent("popstate"))
-                } else {
-                  window.history.pushState({}, "", `/linear-algebra-app${item.path}`)
-                  window.dispatchEvent(new PopStateEvent("popstate"))
-                }
               }}
               title={collapsed ? item.label : undefined}
               className={`
-                flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-colors
-                ${collapsed ? "justify-center px-0 mx-1" : ""}
+                w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left
+                ${collapsed ? "justify-center px-0" : ""}
                 ${activeModule === item.id
                   ? "bg-blue-600 text-white"
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
@@ -100,7 +109,7 @@ function Sidebar({ open, setOpen, activeModule, setActiveModule, collapsed, setC
             >
               <span className="text-lg flex-shrink-0">{item.icon}</span>
               {!collapsed && <span className="font-medium whitespace-nowrap">{item.label}</span>}
-            </a>
+            </button>
           ))}
         </nav>
         <div className={`
@@ -109,7 +118,6 @@ function Sidebar({ open, setOpen, activeModule, setActiveModule, collapsed, setC
         `}>
           {collapsed ? "矿大" : "中国矿业大学 · 线性代数"}
         </div>
-        {/* 折叠按钮 */}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="absolute -right-3 top-20 w-6 h-6 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center text-gray-300 transition-colors"
